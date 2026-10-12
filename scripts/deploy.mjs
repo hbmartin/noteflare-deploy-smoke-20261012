@@ -81,7 +81,7 @@ async function cloudflare() {
 export function selectTarget({ forced, environment, workersCI, name, production, settings }) {
   if (forced === "production") return "production";
   if (forced === "portable") return "";
-  if (environment) return environment;
+  if (environment !== undefined) return environment;
   if (!workersCI) return "production";
   const deployedDB = settings?.bindings?.find((binding) => binding.name === "DB" && binding.type === "d1");
   return name === production.name && deployedDB?.id === production.d1_databases?.[0]?.database_id ? "production" : "";
@@ -170,7 +170,10 @@ async function prepare(forced, dryRun) {
   const production = unstable_readConfig({ config: "wrangler.jsonc", env: "production" }, { hideWarnings: true });
   const name = process.env.WRANGLER_CI_OVERRIDE_NAME || root.name;
   let connection, settings;
-  if (forced === "portable" || (!forced && !process.env.CLOUDFLARE_ENV && process.env.WORKERS_CI === "1")) {
+  if (
+    forced === "portable" ||
+    (!forced && process.env.CLOUDFLARE_ENV === undefined && process.env.WORKERS_CI === "1")
+  ) {
     if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(name)) throw new Error("Invalid portable Worker name.");
     connection = await cloudflare();
     settings = await connection.api(`/workers/scripts/${name}/settings`, { allowMissing: true });

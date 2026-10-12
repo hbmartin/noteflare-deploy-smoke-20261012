@@ -37,6 +37,7 @@ describe("deployment targets and portable configuration", () => {
   it("preserves local production defaults and honors explicit profiles/environments", () => {
     expect(selectTarget({ ...selection, workersCI: false })).toBe("production");
     expect(selectTarget({ ...selection, environment: "staging" })).toBe("staging");
+    expect(selectTarget({ ...selection, environment: "", workersCI: false })).toBe("");
     expect(selectTarget({ ...selection, environment: "production", forced: "portable" })).toBe("");
     expect(selectTarget({ ...selection, forced: "production", settings: null })).toBe("production");
   });

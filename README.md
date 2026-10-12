@@ -50,9 +50,12 @@ embeds, and diff digests. Existing installations keep their feature settings. Sl
 and custom domains are optional follow-up configuration. See [portable deployment and updates](docs/DEPLOYMENT.md#browser-deployment)
 for redeployment, custom domains, and migration safeguards.
 
-<!-- Release gate: publish the Deploy to Cloudflare button targeting
-https://github.com/hbmartin/noteflare only after a disposable native-button deployment
-and redeployment pass the live checklist in docs/DEPLOYMENT.md. -->
+<!-- Release gate: uncomment this button only after a disposable native-button
+deployment and redeployment pass the live checklist in docs/DEPLOYMENT.md.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fhbmartin%2Fnoteflare)
+
+-->
 
 ## Local development
 
