@@ -3,6 +3,16 @@ import { createRequire } from "node:module";
 import { checkPageMoveMigration, parsePendingMigrations } from "./check-page-move-migration.mjs";
 import { checkSlackReviewMigration } from "./check-slack-review-migration.mjs";
 
+// D1's reserved storage table is documented at /d1/best-practices/import-export-data/.
+export const internalTables = new Set([
+  "d1_migrations",
+  "_cf_KV",
+  "_cf_METADATA",
+  "sqlite_sequence",
+  "sqlite_stat1",
+  "sqlite_stat4",
+]);
+
 // Match 0067's backfill exactly: only each receipt's first ten changed pages.
 export const digestCollisionSql = `WITH selected_pages AS (
   SELECT r.id receipt_id,e.page_id,
@@ -53,8 +63,7 @@ export function freshDatabase(pending, query) {
   if (!pending.includes("0001_initial.sql")) return false;
   const tables = query("SELECT name FROM sqlite_master WHERE type='table';", "fresh database schema preflight");
   if (tables.some((row) => !row || typeof row.name !== "string")) throw new Error("Invalid database schema result.");
-  const internal = new Set(["d1_migrations", "_cf_METADATA", "sqlite_sequence", "sqlite_stat1", "sqlite_stat4"]);
-  if (tables.some((row) => !internal.has(row.name)))
+  if (tables.some((row) => !internalTables.has(row.name)))
     throw new Error("Initial migration is pending on a nonempty database. Refusing to treat it as a fresh install.");
   if (tables.some((row) => row.name === "d1_migrations")) {
     const rows = query("SELECT count(*) applied FROM d1_migrations;", "fresh database history preflight");

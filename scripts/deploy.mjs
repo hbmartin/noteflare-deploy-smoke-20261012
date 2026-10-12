@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, relative, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { unstable_readConfig } from "wrangler";
-import { main as migrate, queryRows } from "./migrate-d1.mjs";
+import { internalTables, main as migrate, queryRows } from "./migrate-d1.mjs";
 
 const require = createRequire(import.meta.url);
 const manifestPath = ".wrangler/noteflare-build.json";
@@ -292,21 +292,16 @@ async function build(context) {
   return manifest;
 }
 
-function initializedDatabase(configPath) {
+export function initializedDatabase(configPath, execute = wrangler) {
   const query = (sql) =>
     queryRows(
-      wrangler(["d1", "execute", "DB", "--config", configPath, "--remote", "--json", "--command", sql]),
+      execute(["d1", "execute", "DB", "--config", configPath, "--remote", "--json", "--command", sql]),
       "installation preflight",
     );
   const tables = query("SELECT name FROM sqlite_master WHERE type='table';");
   if (tables.some((row) => !row || typeof row.name !== "string")) throw new Error("Invalid installation schema.");
   if (!tables.some((row) => row.name === "install_state")) {
-    if (
-      tables.some(
-        (row) =>
-          !["d1_migrations", "_cf_METADATA", "sqlite_sequence", "sqlite_stat1", "sqlite_stat4"].includes(row.name),
-      )
-    )
+    if (tables.some((row) => !internalTables.has(row.name)))
       throw new Error("Database contains unknown application tables. Refusing to initialize it.");
     return false;
   }

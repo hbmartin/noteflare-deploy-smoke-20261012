@@ -13,7 +13,9 @@ describe("fresh-install migration safety", () => {
     const execute = vi
       .fn()
       .mockReturnValueOnce({ status: 0, stdout: listing })
-      .mockReturnValueOnce(result([{ name: "_cf_METADATA" }, { name: "d1_migrations" }, { name: "sqlite_sequence" }]))
+      .mockReturnValueOnce(
+        result([{ name: "_cf_KV" }, { name: "_cf_METADATA" }, { name: "d1_migrations" }, { name: "sqlite_sequence" }]),
+      )
       .mockReturnValueOnce(result([{ applied: 0 }]))
       .mockReturnValueOnce({ status: 0 });
     expect(main(["--remote", "--config", "/build/wrangler.json"], execute)).toBe(0);

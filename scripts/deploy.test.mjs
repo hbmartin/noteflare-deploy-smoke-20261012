@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { unstable_readConfig } from "wrangler";
 import {
   deployPrepared,
+  initializedDatabase,
   installationOrigin,
   missingSecrets,
   outputConfig,
@@ -161,6 +162,27 @@ describe("deployment targets and portable configuration", () => {
 });
 
 describe("installation secrets and deployment ordering", () => {
+  const queryResult = (rows) => ({ status: 0, stdout: JSON.stringify([{ success: true, results: rows }]) });
+  it("recognizes fresh remote D1 storage without accepting unknown internal tables", () => {
+    const execute = vi.fn().mockReturnValue(queryResult([{ name: "_cf_KV" }]));
+    expect(initializedDatabase("/build/wrangler.json", execute)).toBe(false);
+    expect(execute.mock.calls[0][0]).toContain("/build/wrangler.json");
+    execute.mockReturnValue(queryResult([{ name: "_cf_UNKNOWN" }]));
+    expect(() => initializedDatabase("/build/wrangler.json", execute)).toThrow("unknown application tables");
+  });
+  it.each([0, 1])("reads the existing installation state: %s", (initialized) => {
+    const execute = vi
+      .fn()
+      .mockReturnValueOnce(queryResult([{ name: "install_state" }, { name: "workspaces" }]))
+      .mockReturnValueOnce(queryResult([{ initialized }]));
+    expect(initializedDatabase("/build/wrangler.json", execute)).toBe(initialized === 1);
+  });
+  it.each([{ status: 1 }, { status: 0, stdout: "invalid" }, queryResult([{ name: null }])])(
+    "rejects failed or malformed installation queries %#",
+    (failure) => {
+      expect(() => initializedDatabase("/build/wrangler.json", () => failure)).toThrow();
+    },
+  );
   it("generates only missing internal secrets before initialization", () => {
     expect(missingSecrets(["BETTER_AUTH_SECRET", "BOOTSTRAP_TOKEN"], false)).toEqual([
       "WEBHOOK_ENCRYPTION_KEY",
